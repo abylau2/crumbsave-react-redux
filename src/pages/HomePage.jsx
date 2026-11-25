@@ -1,18 +1,17 @@
-import { useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Hero } from '../components/Hero.jsx';
 import { HowItWorks } from '../components/HowItWorks.jsx';
 import { AboutSection } from '../components/AboutSection.jsx';
 import { BagCard } from '../components/BagCard.jsx';
-import { defaultFilters } from '../components/CatalogControls.jsx';
 import { EmptyState, ErrorState, LoadingSkeleton } from '../components/States.jsx';
 import { useBags } from '../hooks/useBags.js';
-import { filterAndSortBags } from '../utils/catalog.js';
+import { selectFeaturedBags } from '../features/bags/bagsSelectors.js';
 
 export function HomePage() {
-  const { bags, status, error, retry } = useBags();
-  const featured = useMemo(() => filterAndSortBags(bags, defaultFilters).slice(0, 6), [bags]);
+  const { status, error, retry } = useBags();
+  const featured = useSelector(selectFeaturedBags); // memoized selector
   return <>
     <Hero />
     <section className="catalog-section container" id="catalog" aria-labelledby="catalog-title">

@@ -1,5 +1,5 @@
 {
-  "name": "crumbsave-react-pwa",
+  "name": "crumbsave-react-redux",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -8,16 +8,17 @@
     "dev": "vite --host 127.0.0.1",
     "prebuild": "node scripts/generate-api.mjs",
     "build": "vite build && node scripts/build-sw.mjs dist",
-    "build:pages": "node scripts/generate-api.mjs && vite build --base=/crumbsave-react-pwa/ --outDir dist-pages && node scripts/write-pages-fallback.mjs && node scripts/build-sw.mjs dist-pages",
+    "build:pages": "node scripts/generate-api.mjs && vite build --base=/crumbsave-react-redux/ --outDir dist-pages && node scripts/write-pages-fallback.mjs && node scripts/build-sw.mjs dist-pages",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.107.1",
+    "@reduxjs/toolkit": "^2.15.0",
     "firebase": "^13.2.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-redux": "^9.3.1",
     "react-router-dom": "^7.1.0"
   },
   "devDependencies": {

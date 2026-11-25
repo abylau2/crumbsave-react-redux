@@ -1,18 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
-import { bagListQuery } from './queries.js';
+import { useCallback, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchBags } from '../features/bags/bagsThunks.js';
+import { selectAllBags, selectBagsRequest, selectBagsStatus } from '../features/bags/bagsSelectors.js';
 
-// Same shape as before ({ bags, status, error, retry }) so pages did not change,
-// but the data now lives in the shared TanStack Query cache.
-const NO_BAGS = [];
-
+// Loads the catalog once and keeps it in the Redux store. Every page that calls
+// useBags() reads the same data; the thunk's `condition` makes sure that mounting
+// several of them (or coming back within a minute) does not send extra requests.
 export function useBags() {
-  const query = useQuery(bagListQuery());
-  const status = query.isPending ? 'loading' : query.isError && !query.data ? 'error' : 'success';
-  return {
-    bags: query.data ?? NO_BAGS,
-    status,
-    error: query.error?.message ?? '',
-    isFetching: query.isFetching,
-    retry: () => query.refetch()
-  };
+  const dispatch = useDispatch();
+  const bags = useSelector(selectAllBags);
+  const status = useSelector(selectBagsStatus);
+  const request = useSelector(selectBagsRequest);
+
+  useEffect(() => {
+    dispatch(fetchBags());
+  }, [dispatch, request.stale]);
+
+  const retry = useCallback(() => dispatch(fetchBags({ force: true })), [dispatch]);
+  return { bags, status, error: request.error?.message ?? '', isFetching: request.status === 'loading', retry };
 }

@@ -7,9 +7,9 @@
  *   file list the built files (JS, CSS, fonts, icons, offline page...)
  *
  * Caches
- *   crumbsave-precache-<hash>  the app shell. Replaced on every new version.
- *   crumbsave-static-v1        images/icons/fonts seen at runtime   (cache-first, max 80 files)
- *   crumbsave-api-v1           public catalog JSON                  (network-first, max 60 files)
+ *   csredux-precache-<hash>  the app shell. Replaced on every new version.
+ *   csredux-static-v1        images/icons/fonts seen at runtime   (cache-first, max 80 files)
+ *   csredux-api-v1           public catalog JSON                  (network-first, max 60 files)
  *
  * Privacy: only same-origin GET requests are handled. Firebase / Google sign-in
  * requests go to other domains, so they never pass through these caches.
@@ -17,15 +17,15 @@
 const VERSION = '__VERSION__';
 const PRECACHE_FILES = __PRECACHE__;
 
-const PRECACHE = `crumbsave-precache-${VERSION}`;
-const STATIC = 'crumbsave-static-v1';
-const API = 'crumbsave-api-v1';
+const PRECACHE = `csredux-precache-${VERSION}`;
+const STATIC = 'csredux-static-v1';
+const API = 'csredux-api-v1';
 const CURRENT_CACHES = [PRECACHE, STATIC, API];
 const MAX_ENTRIES = { [STATIC]: 80, [API]: 60 };
 const API_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // saved API answers older than a week are not used
 const NETWORK_TIMEOUT_MS = 4000;
 
-const SCOPE = self.registration.scope; // e.g. https://user.github.io/crumbsave-react-pwa/
+const SCOPE = self.registration.scope; // e.g. https://user.github.io/crumbsave-react-redux/
 const SCOPE_PATH = new URL(SCOPE).pathname;
 const SHELL_URL = new URL('./', SCOPE).href;
 const OFFLINE_URL = new URL('offline.html', SCOPE).href;
@@ -49,7 +49,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter((name) => name.startsWith('crumbsave-') && !CURRENT_CACHES.includes(name)).map((name) => caches.delete(name)));
+    await Promise.all(names.filter((name) => name.startsWith('csredux-') && !CURRENT_CACHES.includes(name)).map((name) => caches.delete(name)));
     await self.clients.claim();
   })());
 });

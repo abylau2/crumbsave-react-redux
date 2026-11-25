@@ -18,7 +18,7 @@ class PagesHandler(SimpleHTTPRequestHandler):
 class ActualPagesHandler(PagesHandler):
     def translate_path(self,path):
         from urllib.parse import urlsplit,unquote
-        relative=unquote(urlsplit(path).path).removeprefix('/crumbsave-react-pwa/')
+        relative=unquote(urlsplit(path).path).removeprefix('/crumbsave-react-redux/')
         return str(ROOT/'dist-pages'/relative)
 
 server=ThreadingHTTPServer(('127.0.0.1',4175),ActualPagesHandler)
@@ -102,7 +102,7 @@ with sync_playwright() as p:
             expect(page.get_by_role('button',name='Open menu')).to_be_visible()
     print('PASS 8 routes at 375, 768, 1440px, mobile navigation')
     for route in ['/about','/bags?sort=price-asc&page=2','/bags/fan-001','/dashboard','/login','/#how-it-works']:
-        page.goto('http://127.0.0.1:4175/crumbsave-react-pwa'+route,wait_until='networkidle')
+        page.goto('http://127.0.0.1:4175/crumbsave-react-redux'+route,wait_until='networkidle')
         expect(page.locator('main h1').first).to_be_visible()
         assert '__route' not in page.url
         assert page.url.endswith(route), (page.url, route)
@@ -116,15 +116,15 @@ with sync_playwright() as p:
     expect(page.get_by_text('No listings match these filters.',exact=True)).to_be_visible()
     page.get_by_role('button',name='Reset Filters',exact=True).first.click();expect(page.locator('.kpi').first.locator('strong')).to_have_text('2')
     print('PASS Dashboard combined filters, empty filtered state and reset')
-    page.goto('http://127.0.0.1:4175/crumbsave-react-pwa/bags',wait_until='networkidle')
+    page.goto('http://127.0.0.1:4175/crumbsave-react-redux/bags',wait_until='networkidle')
     original=page.evaluate("""() => { const key='crumbsave:demo:v1';const state=JSON.parse(localStorage.getItem(key));state.bags[0].image='/crumbsave-react-midterm/images/fan-food/ichiraku-ramen.webp';state.bags.push({...state.bags[0],id:'bag-rename-test',title:'Saved before rename',quantity:2});state.reservations.push({id:'reservation-rename-test',bagId:'bag-rename-test',title:'Saved before rename',businessName:'Test Bakery',price:2000,district:'Medeu',pickupStart:'18:00',pickupEnd:'19:00',image:state.bags[0].image,status:'Reserved'});const raw=JSON.stringify(state);localStorage.setItem(key,raw);return raw; }""")
-    page.goto('http://127.0.0.1:4175/crumbsave-react-pwa/bags/bag-rename-test',wait_until='networkidle')
+    page.goto('http://127.0.0.1:4175/crumbsave-react-redux/bags/bag-rename-test',wait_until='networkidle')
     expect(page.get_by_role('heading',level=1)).to_have_text('Saved before rename')
     expect(page.get_by_role('button',name='Already reserved')).to_be_disabled()
     assert page.locator('.detail-media img').evaluate('(img) => img.complete && img.naturalWidth > 0')
-    assert page.locator('.detail-media img').get_attribute('src').startswith('/crumbsave-react-pwa/')
+    assert page.locator('.detail-media img').get_attribute('src').startswith('/crumbsave-react-redux/')
     assert page.evaluate("localStorage.getItem('crumbsave:demo:v1')")==original
-    page.goto('http://127.0.0.1:4175/crumbsave-react-pwa/reservations',wait_until='networkidle')
+    page.goto('http://127.0.0.1:4175/crumbsave-react-redux/reservations',wait_until='networkidle')
     assert page.locator('.reservation-card img').first.evaluate('(img) => img.complete && img.naturalWidth > 0')
     print('PASS rename preserves old listings, reservations and image URLs without resetting data')
     empty=ctx.new_page();empty.goto(BASE)

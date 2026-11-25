@@ -52,15 +52,15 @@ try:
         page.reload(); page.wait_for_function("!!navigator.serviceWorker.controller")
         check('service worker controls the page', True)
         names = page.evaluate("caches.keys()")
-        check('precache cache exists', any(n.startswith('crumbsave-precache-') for n in names), names)
-        pre = page.evaluate("""async () => { const n = (await caches.keys()).find(k => k.startsWith('crumbsave-precache-')); const c = await caches.open(n); return (await c.keys()).map(r => new URL(r.url).pathname); }""")
+        check('precache cache exists', any(n.startswith('csredux-precache-') for n in names), names)
+        pre = page.evaluate("""async () => { const n = (await caches.keys()).find(k => k.startsWith('csredux-precache-')); const c = await caches.open(n); return (await c.keys()).map(r => new URL(r.url).pathname); }""")
         check('shell pre-cached: index, offline page, icons, JS and CSS', all(any(re.search(pat, u) for u in pre) for pat in [r'/$', r'offline\.html', r'icon-192', r'icon-512', r'\.js$', r'\.css$', r'\.woff2$']), pre)
 
         # ---- visit pages online so the public API is saved
         page.goto(BASE + '/bags'); expect(page.locator('.bag-card').first).to_be_visible()
         first_href = page.locator('.bag-card a').first.get_attribute('href')
         page.goto(BASE + first_href); expect(page.locator('h1').first).to_be_visible()
-        api_keys = page.evaluate("""async () => { const c = await caches.open('crumbsave-api-v1'); return (await c.keys()).map(r => new URL(r.url).pathname); }""")
+        api_keys = page.evaluate("""async () => { const c = await caches.open('csredux-api-v1'); return (await c.keys()).map(r => new URL(r.url).pathname); }""")
         check('API list and detail are saved in the api cache', any(k.endswith('/api/bags.json') for k in api_keys) and any('/api/bags/fan-' in k for k in api_keys), api_keys)
         indicator = page.locator('[data-testid=connection-indicator]')
         check('online indicator says Online', indicator.inner_text().strip() == 'Online')
@@ -76,7 +76,7 @@ try:
         page.goto(BASE + first_href); expect(page.locator('h1').first).to_be_visible(timeout=10000)
         check('offline: bag details open from saved data', 'not found' not in page.inner_text('body').lower())
         # static images: cache-first
-        img_cached = page.evaluate("""async () => { const c = await caches.open('crumbsave-static-v1'); return (await c.keys()).length; }""")
+        img_cached = page.evaluate("""async () => { const c = await caches.open('csredux-static-v1'); return (await c.keys()).length; }""")
         check('images were saved by cache-first strategy', img_cached > 0, img_cached)
 
         hdr = page.evaluate("fetch('/api/bags.json').then(r => [r.status, r.headers.get('x-crumbsave-source'), r.headers.get('x-crumbsave-cached-at')])")
@@ -104,7 +104,7 @@ try:
         # ---- runtime cache limit (trim)
         page.evaluate("Promise.all(Array.from({length: 95}, (_, i) => fetch('/icons/icon-192.png?n=' + i)))")
         page.wait_for_timeout(1500)
-        over = page.evaluate("""async () => { const c = await caches.open('crumbsave-static-v1'); return (await c.keys()).length; }""")
+        over = page.evaluate("""async () => { const c = await caches.open('csredux-static-v1'); return (await c.keys()).length; }""")
         check('static cache is trimmed to its limit (95 files requested, max 80 kept)', 0 < over <= 80, over)
 
         # ---- update flow: change the build, reload, expect the toast
@@ -122,8 +122,8 @@ try:
             page.wait_for_function("!!navigator.serviceWorker.controller")
             v2 = sw_version(page); check('after Update now the new version is active', v2 != v1, (v1, v2))
             names = page.evaluate("caches.keys()")
-            pre_caches = [n for n in names if n.startswith('crumbsave-precache-')]
-            check('old precache was deleted on activate', pre_caches == ['crumbsave-precache-' + v2], names)
+            pre_caches = [n for n in names if n.startswith('csredux-precache-')]
+            check('old precache was deleted on activate', pre_caches == ['csredux-precache-' + v2], names)
             expect(page.locator('[data-testid=update-toast]')).to_have_count(0); check('toast is gone after update', True)
         finally:
             offline_html.write_text(original)

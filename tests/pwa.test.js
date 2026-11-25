@@ -62,11 +62,15 @@ test('mergePublic takes public fields from the API but keeps local stock', async
   assert.deepEqual(mergePublic({ id: 'bag-1' }, null), { id: 'bag-1' });
 });
 
-test('connection store reports saved data and recovery', async () => {
-  const { getConnection, reportData, setOnline } = await import('../src/lib/connection.js');
-  setOnline(false); assert.equal(getConnection().online, false);
+test('network slice (Redux) reports saved data and recovery', async () => {
+  const { makeStore } = await import('../src/app/store.js');
+  const { bindConnectionStore, reportData, setOnline } = await import('../src/lib/connection.js');
+  const store = makeStore();
+  bindConnectionStore(store);
+  const net = () => store.getState().network;
+  setOnline(false); assert.equal(net().online, false);
   reportData({ fromSaved: true, savedAt: '2026-01-01T00:00:00Z' });
-  assert.equal(getConnection().savedData, true); assert.equal(getConnection().savedAt, '2026-01-01T00:00:00Z');
+  assert.equal(net().savedData, true); assert.equal(net().savedAt, '2026-01-01T00:00:00Z');
   reportData({ fromSaved: false });
-  assert.deepEqual([getConnection().online, getConnection().savedData], [true, false]);
+  assert.deepEqual([net().online, net().savedData], [true, false]);
 });

@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { useBags } from '../hooks/useBags.js';
 import { ErrorState, LoadingSkeleton } from '../components/States.jsx';
-import { filterDashboard, dashboardStats } from '../utils/dashboard.js';
+import { selectDashboard, selectDashboardOptions } from '../features/bags/bagsSelectors.js';
 import { catalogLink } from '../utils/catalogParams.js';
 import { formatKzt } from '../utils/catalog.js';
 
@@ -14,10 +15,9 @@ export default function DashboardPage() {
   const { bags, status, error, retry } = useBags();
   const [category, setCategory] = useState('All');
   const [district, setDistrict] = useState('All districts');
-  const filtered = useMemo(() => filterDashboard(bags, category, district), [bags, category, district]);
-  const stats = useMemo(() => dashboardStats(filtered), [filtered]);
-  const categories = useMemo(() => [...new Set(bags.map((bag) => bag.category))].sort(), [bags]);
-  const districts = useMemo(() => [...new Set(bags.map((bag) => bag.district))].sort(), [bags]);
+  // Dashboard filters are temporary UI state, so they stay local (useState).
+  const { filtered, stats } = useSelector((state) => selectDashboard(state, category, district));
+  const { categories, districts } = useSelector(selectDashboardOptions);
   function reset() { setCategory('All'); setDistrict('All districts'); }
   const filters = { category, district };
   const metrics = [

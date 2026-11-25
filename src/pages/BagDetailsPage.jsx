@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Check, Clock3, MapPin, ShoppingBag } from 'lucide-react';
 import { useBag } from '../hooks/useBag.js';
@@ -25,29 +25,22 @@ function BagDetails({ id }) {
   }
   const bagQuery = useBag(id);
   const reservationsQuery = useReservations();
-  const reserveMutation = useReserveBag();
-  const reservationPending = useRef(false);
+  const { reserve: reserveInStore, isPending, isReserved: reserved } = useReserveBag(id);
+  // The message under the button is temporary UI state for this page only.
+  const [result, setResult] = useState({ status: 'idle', message: '' });
 
   const loading = bagQuery.status === 'loading' || reservationsQuery.status === 'loading';
   const failed = bagQuery.status === 'error' ? bagQuery : reservationsQuery.status === 'error' ? reservationsQuery : null;
-  const reserved = reservationsQuery.items.some((item) => item.bagId === id);
-  const action = reserveMutation.isPending
-    ? { status: 'pending', message: '' }
-    : reserveMutation.isSuccess
-      ? { status: 'success', message: 'A good find is yours. Your reservation is saved.' }
-      : reserveMutation.isError
-        ? { status: 'error', message: reserveMutation.error.message }
-        : { status: 'idle', message: '' };
+  const action = isPending ? { status: 'pending', message: '' } : result;
 
   async function reserve() {
-    if (!bagQuery.bag || reservationPending.current || reserved) return;
-    reservationPending.current = true;
+    if (!bagQuery.bag || isPending || reserved) return;
     try {
-      await reserveMutation.mutateAsync(id);
-    } catch {
-      // The error is shown from reserveMutation.error.
-    } finally {
-      reservationPending.current = false;
+      await reserveInStore();
+      setResult({ status: 'success', message: 'A good find is yours. Your reservation is saved.' });
+    } catch (error) {
+      if (error?.name === 'ConditionError') return; // a reservation is already running
+      setResult({ status: 'error', message: error.message });
     }
   }
 
@@ -61,7 +54,7 @@ function BagDetails({ id }) {
     <div className="detail-grid"><div className="detail-media"><img src={imageSrc(bag.image)} width="1000" height="750" alt={`Image of ${bag.title}`} /><div className="detail-image-caption">GOOD FOOD, ONE MORE CHANCE <span>CRUMBSAVE · ALMATY</span></div></div>
       <div className="detail-info"><p className="eyebrow">{bag.category.toUpperCase()} · ALMATY</p><h1>{bag.title}</h1><p className="detail-business">by {bag.businessName}</p>{bag.reference && <p className="detail-reference">Inspired by {bag.reference} · Unofficial fan-inspired listing</p>}<p className="detail-description">{bag.description} The exact contents can vary from day to day.</p>
         <div className="detail-facts"><div><MapPin size={20} /><div><span>Pickup area</span><strong>{bag.district}, Almaty</strong></div></div><div><Clock3 size={20} /><div><span>Pickup window</span><strong>{pickupWindow(bag)}</strong></div></div><div><ShoppingBag size={20} /><div><span>Availability</span><strong>{soldOut ? 'Sold out' : `${bag.quantity} ${bag.quantity === 1 ? 'bag' : 'bags'} left`}</strong></div></div></div>
-        <div className="reservation-panel"><div className="reservation-price"><div><del>{formatKzt(bag.originalPrice)}</del><strong>{formatKzt(bag.price)}</strong></div><span className="discount-tag inline">SAVE {discountPercent(bag)}%</span></div><p>Saved in this browser. No payment is taken.</p><button className={`button button-primary button-full ${reserveMutation.isSuccess ? 'just-reserved' : ''}`} type="button" disabled={soldOut || reserved || action.status === 'pending'} onClick={reserve}>{action.status === 'pending' ? 'Reserving…' : reserved ? 'Already reserved' : soldOut ? 'Sold out' : 'Reserve this bag'} <ArrowUpRight size={18} /></button>
+        <div className="reservation-panel"><div className="reservation-price"><div><del>{formatKzt(bag.originalPrice)}</del><strong>{formatKzt(bag.price)}</strong></div><span className="discount-tag inline">SAVE {discountPercent(bag)}%</span></div><p>Saved in this browser. No payment is taken.</p><button className={`button button-primary button-full ${result.status === 'success' ? 'just-reserved' : ''}`} type="button" disabled={soldOut || reserved || action.status === 'pending'} onClick={reserve}>{action.status === 'pending' ? 'Reserving…' : reserved ? 'Already reserved' : soldOut ? 'Sold out' : 'Reserve this bag'} <ArrowUpRight size={18} /></button>
           {action.message && <p className={`feedback ${action.status}`} role={action.status === 'error' ? 'alert' : 'status'}>{action.status === 'success' && <Check className="check-pop" size={18} aria-hidden="true" />}{action.message}{action.status === 'success' && <> <Link to="/reservations">View my reservations <ArrowUpRight size={15} /></Link></>}</p>}</div>
       </div></div>
     <div className="surprise-info"><div><p className="eyebrow">A LITTLE NOTE</p><h2>What's inside a <em>Surprise Bag?</em></h2></div><p>The exact selection depends on what's left at the end of the day. The category, pickup area, and price are shown before you reserve; the contents are the surprise.</p></div>

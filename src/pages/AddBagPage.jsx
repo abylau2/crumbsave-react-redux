@@ -14,7 +14,7 @@ export function AddBagPage() {
   const [values, setValues] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [submission, setSubmission] = useState({ status: 'idle', message: '', bag: null });
-  const createMutation = useCreateBag();
+  const { create } = useCreateBag();
   const pending = useRef(false);
 
   function change(event) {
@@ -38,7 +38,7 @@ export function AddBagPage() {
     pending.current = true;
     setSubmission({ status: 'pending', message: '', bag: null });
     try {
-      const bag = await createMutation.mutateAsync(normalizeBag(values));
+      const bag = await create(normalizeBag(values));
       setSubmission({ status: 'success', message: 'Your bag is ready to discover.', bag });
       setValues(emptyForm);
       setErrors({});
